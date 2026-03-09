@@ -1,4 +1,55 @@
 # C147/247 Final Project
+### Specifics for US:
+# 1. (optional) We can test another implementation with LSTM simply: 
+just copy GRUEncoder and swap nn.GRU for nn.LSTM, should probs add a matching config config/model/lstm_ctc.yaml
+
+# 2. Changing data augmentation: 
+I think this should be easy too(might be wrong)in:  config/transforms/log_spectrogram.yaml
+Change what looks like this:
+
+specaug:
+  n_time_masks: 5      
+  time_mask_param: 50 
+  n_freq_masks: 3    
+  freq_mask_param: 8 
+
+# 3. modifying number of channels
+in tranforms.py, zero out channels, add new transform and change the num_channels
+
+
+# 4. training data: 
+just remove sessions/stuff train list and see how it looks
+
+# Sampling rate
+(might be wrong)
+in config/transforms/log_spectrogram.yaml, mess around with hop_length (probs need to update infeatures or something)
+
+
+# To get into gcloud (this is what I do since I work from terminal), might need to do a whole setup which is shown in bruinlearn slides
+gcloud compute ssh final147 --project=ece147afinal --zone=us-east1-d
+
+# to train base model: 
+# first activate conda
+`conda activate final147`
+`python -m emg2qwerty.train user="single_user" trainer.accelerator=gpu trainer.devices=1 num_workers=4`
+
+#  to train our GRU:
+# 1 for ease of use, use tmux, try this first: 
+`tmux attach -t training`
+# if you get error, now new session, create a new session called training
+# 2. Then HERE (should see green bar at bottom), you should see this:
+`conda activate final147`
+```
+python -m emg2qwerty.train \
+  user="single_user" \
+  model=gru_ctc \
+  trainer.accelerator=gpu trainer.devices=1 \
+  num_workers=4
+````
+# 3. now because you used tmux you can exit from here by pressing the keys: 
+Control+b D # note that Control and b go together
+
+
 ### Winter 2026 
 
 This course project is built upon the emg2qwerty work from Meta. The first section of this README provides some guidance for working with the repo and contains a running list of FAQs. **Note that the rest of the README is from the original repo and we encourage you to take a look at their work.**
