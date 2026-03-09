@@ -281,7 +281,7 @@ class TDSConvEncoder(nn.Module):
 
 
 class GRUEncoder(nn.Module):
-    """A bidirectional GRU encoder for EMG sequences.
+    """Our implementation: A bidirectional GRU encoder for EMG sequences.
 
     Takes input of shape (T, N, num_features) and returns
     output of shape (T, N, hidden_size * 2) if bidirectional.
@@ -312,7 +312,8 @@ class GRUEncoder(nn.Module):
             num_layers=num_layers,
             dropout=dropout if num_layers > 1 else 0.0,
             bidirectional=bidirectional,
-            batch_first=False,  # expects (T, N, features)
+            # expects (T, N, features):
+            batch_first=False,  
         )
         out_size = hidden_size * 2 if bidirectional else hidden_size
         self.layer_norm = nn.LayerNorm(out_size)

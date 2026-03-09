@@ -334,7 +334,7 @@ class GRUCTCModule(pl.LightningModule):
         N = len(input_lengths)
 
         emissions = self.forward(inputs)
-        emission_lengths = input_lengths  # no temporal downsampling
+        emission_lengths = input_lengths
 
         loss = self.ctc_loss(
             log_probs=emissions,
