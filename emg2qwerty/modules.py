@@ -319,7 +319,8 @@ class GRUEncoder(nn.Module):
 
     def forward(self, inputs: torch.Tensor) -> torch.Tensor:
         # inputs: (T, N, num_features)
-        x, _ = self.gru(inputs)  # (T, N, hidden_size * 2)
+        x = inputs.contiguous()  
+        x, _ = self.gru(x)
         return self.layer_norm(x)
 
     @property

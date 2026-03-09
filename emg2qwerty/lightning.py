@@ -359,9 +359,7 @@ class GRUCTCModule(pl.LightningModule):
         return loss
 
     def forward(self, inputs: torch.Tensor) -> torch.Tensor:
-        x = inputs.contiguous()  # fix for cuDNN non-contiguous tensor error
-        x, _ = self.gru(x)
-        return self.layer_norm(x)
+        return self.model(inputs)
     
     def training_step(self, *args, **kwargs) -> torch.Tensor:
         return self._step("train", *args, **kwargs)
