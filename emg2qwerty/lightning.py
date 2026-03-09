@@ -327,7 +327,7 @@ class GRUCTCModule(pl.LightningModule):
 
     def _step(self, phase, batch, *args, **kwargs):
         # GRU doesn't shorten T, so T_diff = 0
-        inputs = batch["inputs"]
+        inputs = batch["inputs"].contiguous()
         targets = batch["targets"]
         input_lengths = batch["input_lengths"]
         target_lengths = batch["target_lengths"]

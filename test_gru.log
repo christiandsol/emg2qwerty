@@ -1,0 +1,174 @@
+[2026-03-09 04:19:13,668][__main__][INFO] - 
+Config:
+user: single_user
+dataset:
+  train:
+  - user: 89335547
+    session: 2021-06-03-1622765527-keystrokes-dca-study@1-0efbe614-9ae6-4131-9192-4398359b4f5f
+  - user: 89335547
+    session: 2021-06-02-1622681518-keystrokes-dca-study@1-0efbe614-9ae6-4131-9192-4398359b4f5f
+  - user: 89335547
+    session: 2021-06-04-1622863166-keystrokes-dca-study@1-0efbe614-9ae6-4131-9192-4398359b4f5f
+  - user: 89335547
+    session: 2021-07-22-1627003020-keystrokes-dca-study@1-0efbe614-9ae6-4131-9192-4398359b4f5f
+  - user: 89335547
+    session: 2021-07-21-1626916256-keystrokes-dca-study@1-0efbe614-9ae6-4131-9192-4398359b4f5f
+  - user: 89335547
+    session: 2021-07-22-1627004019-keystrokes-dca-study@1-0efbe614-9ae6-4131-9192-4398359b4f5f
+  - user: 89335547
+    session: 2021-06-05-1622885888-keystrokes-dca-study@1-0efbe614-9ae6-4131-9192-4398359b4f5f
+  - user: 89335547
+    session: 2021-06-02-1622679967-keystrokes-dca-study@1-0efbe614-9ae6-4131-9192-4398359b4f5f
+  - user: 89335547
+    session: 2021-06-03-1622764398-keystrokes-dca-study@1-0efbe614-9ae6-4131-9192-4398359b4f5f
+  - user: 89335547
+    session: 2021-07-21-1626917264-keystrokes-dca-study@1-0efbe614-9ae6-4131-9192-4398359b4f5f
+  - user: 89335547
+    session: 2021-06-05-1622889105-keystrokes-dca-study@1-0efbe614-9ae6-4131-9192-4398359b4f5f
+  - user: 89335547
+    session: 2021-06-03-1622766673-keystrokes-dca-study@1-0efbe614-9ae6-4131-9192-4398359b4f5f
+  - user: 89335547
+    session: 2021-06-04-1622861066-keystrokes-dca-study@1-0efbe614-9ae6-4131-9192-4398359b4f5f
+  - user: 89335547
+    session: 2021-07-22-1627001995-keystrokes-dca-study@1-0efbe614-9ae6-4131-9192-4398359b4f5f
+  - user: 89335547
+    session: 2021-06-05-1622884635-keystrokes-dca-study@1-0efbe614-9ae6-4131-9192-4398359b4f5f
+  - user: 89335547
+    session: 2021-07-21-1626915176-keystrokes-dca-study@1-0efbe614-9ae6-4131-9192-4398359b4f5f
+  val:
+  - user: 89335547
+    session: 2021-06-04-1622862148-keystrokes-dca-study@1-0efbe614-9ae6-4131-9192-4398359b4f5f
+  test:
+  - user: 89335547
+    session: 2021-06-02-1622682789-keystrokes-dca-study@1-0efbe614-9ae6-4131-9192-4398359b4f5f
+  root: ${hydra:runtime.cwd}/data
+to_tensor:
+  _target_: emg2qwerty.transforms.ToTensor
+  fields:
+  - emg_left
+  - emg_right
+band_rotation:
+  _target_: emg2qwerty.transforms.ForEach
+  transform:
+    _target_: emg2qwerty.transforms.RandomBandRotation
+    offsets:
+    - -1
+    - 0
+    - 1
+temporal_jitter:
+  _target_: emg2qwerty.transforms.TemporalAlignmentJitter
+  max_offset: 120
+logspec:
+  _target_: emg2qwerty.transforms.LogSpectrogram
+  n_fft: 64
+  hop_length: 16
+specaug:
+  _target_: emg2qwerty.transforms.SpecAugment
+  n_time_masks: 3
+  time_mask_param: 25
+  n_freq_masks: 2
+  freq_mask_param: 4
+transforms:
+  train:
+  - ${to_tensor}
+  - ${band_rotation}
+  - ${temporal_jitter}
+  - ${logspec}
+  - ${specaug}
+  val:
+  - ${to_tensor}
+  - ${logspec}
+  test: ${transforms.val}
+module:
+  _target_: emg2qwerty.lightning.GRUCTCModule
+  in_features: 528
+  mlp_features:
+  - 384
+  hidden_size: 384
+  num_layers: 2
+  dropout: 0.2
+datamodule:
+  _target_: emg2qwerty.lightning.WindowedEMGDataModule
+  window_length: 8000
+  padding:
+  - 1800
+  - 200
+optimizer:
+  _target_: torch.optim.Adam
+  lr: 0.001
+lr_scheduler:
+  scheduler:
+    _target_: pl_bolts.optimizers.lr_scheduler.LinearWarmupCosineAnnealingLR
+    warmup_epochs: 10
+    max_epochs: ${trainer.max_epochs}
+    warmup_start_lr: 1.0e-08
+    eta_min: 1.0e-06
+  interval: epoch
+decoder:
+  _target_: emg2qwerty.decoder.CTCGreedyDecoder
+seed: 1501
+batch_size: 32
+num_workers: 4
+train: false
+checkpoint: /home/christiansolano/emg2qwerty/logs/2026-03-09/03-04-01/checkpoints/last.ckpt
+monitor_metric: val/CER
+monitor_mode: min
+trainer:
+  accelerator: gpu
+  devices: 1
+  num_nodes: 1
+  max_epochs: 40
+  default_root_dir: ${hydra:runtime.output_dir}
+callbacks:
+- _target_: pytorch_lightning.callbacks.LearningRateMonitor
+- _target_: pytorch_lightning.callbacks.ModelCheckpoint
+  dirpath: ${hydra:runtime.output_dir}/checkpoints
+  monitor: ${monitor_metric}
+  mode: ${monitor_mode}
+  save_last: true
+  verbose: true
+
+Global seed set to 1501
+[2026-03-09 04:19:13,671][__main__][INFO] - Instantiating LightningModule {'_target_': 'emg2qwerty.lightning.GRUCTCModule', 'in_features': 528, 'mlp_features': [384], 'hidden_size': 384, 'num_layers': 2, 'dropout': 0.2}
+[2026-03-09 04:19:13,776][__main__][INFO] - Loading module from checkpoint /home/christiansolano/emg2qwerty/logs/2026-03-09/03-04-01/checkpoints/last.ckpt
+/opt/conda/envs/final147/lib/python3.10/site-packages/lightning_lite/utilities/cloud_io.py:48: FutureWarning: You are using `torch.load` with `weights_only=False` (the current default value), which uses the default pickle module implicitly. It is possible to construct malicious pickle data which will execute arbitrary code during unpickling (See https://github.com/pytorch/pytorch/blob/main/SECURITY.md#untrusted-models for more details). In a future release, the default value for `weights_only` will be flipped to `True`. This limits the functions that could be executed during unpickling. Arbitrary objects will no longer be allowed to be loaded via this mode unless they are explicitly allowlisted by the user via `torch.serialization.add_safe_globals`. We recommend you start setting `weights_only=True` for any use case where you don't have full control of the loaded file. Please open an issue on GitHub for any issues related to this experimental feature.
+  return torch.load(f, map_location=map_location)
+[2026-03-09 04:19:13,900][__main__][INFO] - Instantiating LightningDataModule {'_target_': 'emg2qwerty.lightning.WindowedEMGDataModule', 'window_length': 8000, 'padding': [1800, 200]}
+GPU available: True (cuda), used: True
+TPU available: False, using: 0 TPU cores
+IPU available: False, using: 0 IPUs
+HPU available: False, using: 0 HPUs
+Missing logger folder: /home/christiansolano/emg2qwerty/logs/2026-03-09/04-19-13/lightning_logs
+LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0]
+Validation: 0it [00:00, ?it/s]Validation:   0%|          | 0/7 [00:00<?, ?it/s]Validation DataLoader 0:   0%|          | 0/7 [00:00<?, ?it/s]Validation DataLoader 0:  14%|█▍        | 1/7 [00:01<00:06,  1.01s/it]Validation DataLoader 0:  29%|██▊       | 2/7 [00:01<00:03,  1.64it/s]Validation DataLoader 0:  43%|████▎     | 3/7 [00:01<00:01,  2.10it/s]Validation DataLoader 0:  57%|█████▋    | 4/7 [00:01<00:01,  2.45it/s]Validation DataLoader 0:  71%|███████▏  | 5/7 [00:01<00:00,  2.72it/s]Validation DataLoader 0:  86%|████████▌ | 6/7 [00:02<00:00,  2.93it/s]Validation DataLoader 0: 100%|██████████| 7/7 [00:02<00:00,  3.15it/s]Validation DataLoader 0: 100%|██████████| 7/7 [00:02<00:00,  3.13it/s]
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃      Validate metric      ┃       DataLoader 0        ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│          val/CER          │    22.995126724243164     │
+│          val/DER          │    2.5254762172698975     │
+│          val/IER          │     7.177669525146484     │
+│          val/SER          │    13.291980743408203     │
+│         val/loss          │    0.7590473890304565     │
+└───────────────────────────┴───────────────────────────┘
+LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0]
+Testing: 0it [00:00, ?it/s]Testing:   0%|          | 0/1 [00:00<?, ?it/s]Testing DataLoader 0:   0%|          | 0/1 [00:00<?, ?it/s]Testing DataLoader 0: 100%|██████████| 1/1 [00:25<00:00, 25.82s/it]Testing DataLoader 0: 100%|██████████| 1/1 [00:25<00:00, 25.83s/it]
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃        Test metric        ┃       DataLoader 0        ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│         test/CER          │    23.406095504760742     │
+│         test/DER          │     2.312513589859009     │
+│         test/IER          │     5.143721580505371     │
+│         test/SER          │    15.949859619140625     │
+│         test/loss         │    0.7399032711982727     │
+└───────────────────────────┴───────────────────────────┘
+{'val_metrics': [{'val/loss': 0.7590473890304565,
+                  'val/CER': 22.995126724243164,
+                  'val/IER': 7.177669525146484,
+                  'val/DER': 2.5254762172698975,
+                  'val/SER': 13.291980743408203}],
+ 'test_metrics': [{'test/loss': 0.7399032711982727,
+                   'test/CER': 23.406095504760742,
+                   'test/IER': 5.143721580505371,
+                   'test/DER': 2.312513589859009,
+                   'test/SER': 15.949859619140625}],
+ 'best_checkpoint': ''}
