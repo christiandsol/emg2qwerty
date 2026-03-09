@@ -272,8 +272,10 @@ class TDSConvCTCModule(pl.LightningModule):
         )
 
 
-class GRUCTCModule(TDSConvCTCModule):
+class GRUCTCModule(pl.LightningModule):
     """GRU-based CTC module. Replaces TDSConvEncoder with a bidirectional GRU."""
+    NUM_BANDS: ClassVar[int] = 2
+    ELECTRODE_CHANNELS: ClassVar[int] = 16
 
     def __init__(
         self,
@@ -355,3 +357,37 @@ class GRUCTCModule(TDSConvCTCModule):
 
         self.log(f"{phase}/loss", loss, batch_size=N, sync_dist=True)
         return loss
+
+    def forward(self, inputs: torch.Tensor) -> torch.Tensor:
+        return self.model(inputs)
+    
+    def training_step(self, *args, **kwargs) -> torch.Tensor:
+        return self._step("train", *args, **kwargs)
+    
+    def validation_step(self, *args, **kwargs) -> torch.Tensor:
+        return self._step("val", *args, **kwargs)
+
+    def test_step(self, *args, **kwargs) -> torch.Tensor:
+        return self._step("test", *args, **kwargs)
+
+    def on_train_epoch_end(self) -> None:
+        self._epoch_end("train")
+
+    def on_validation_epoch_end(self) -> None:
+        self._epoch_end("val")
+
+    def on_test_epoch_end(self) -> None:
+        self._epoch_end("test")
+
+    def _epoch_end(self, phase: str) -> None:
+        metrics = self.metrics[f"{phase}_metrics"]
+        self.log_dict(metrics.compute(), sync_dist=True)
+        metrics.reset()
+
+    def configure_optimizers(self) -> dict[str, Any]:
+        return utils.instantiate_optimizer_and_scheduler(
+            self.parameters(), 
+            optimizer_config=self.hparams.optimizer,
+            lr_scheduler_config=self.hparams.lr_scheduler,
+        )
+
