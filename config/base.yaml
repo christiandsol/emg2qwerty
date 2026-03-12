@@ -33,7 +33,7 @@ callbacks:
     verbose: True
 
 dataset:
-  root: ${hydra:runtime.cwd}/data
+  root: /mnt/data/key_data
 
 hydra:
   run:

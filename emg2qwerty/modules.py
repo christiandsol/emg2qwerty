@@ -328,3 +328,183 @@ class GRUEncoder(nn.Module):
     @property
     def output_size(self) -> int:
         return self.hidden_size * 2 if self.bidirectional else self.hidden_size
+
+
+class CNN1dBlock(nn.Module):
+    """A 1D CNN block with padding to maintain temporal length.
+
+    Takes input of shape (T, N, num_features) and returns
+    output of shape (T, N, num_features).
+
+    Args:
+        num_features (int): Number of features (channels).
+        kernel_size (int): Kernel size for convolution.
+        dropout (float): Dropout probability.
+    """
+
+    def __init__(
+        self,
+        num_features: int,
+        kernel_size: int = 15,
+        dropout: float = 0.0,
+    ) -> None:
+        super().__init__()
+        padding = kernel_size // 2
+        
+        self.conv = nn.Conv1d(
+            in_channels=num_features,
+            out_channels=num_features,
+            kernel_size=kernel_size,
+            padding=padding,
+        )
+        self.relu = nn.ReLU()
+        self.layer_norm = nn.LayerNorm(num_features)
+        self.dropout = nn.Dropout(dropout) if dropout > 0 else nn.Identity()
+
+    def forward(self, inputs: torch.Tensor) -> torch.Tensor:
+        T, N, C = inputs.shape
+        
+        x = inputs.permute(1, 2, 0)
+        
+        x = self.conv(x)
+        x = self.relu(x)
+        x = self.dropout(x)
+        
+        x = x.permute(2, 0, 1)
+        
+        x = x + inputs
+        x = self.layer_norm(x)
+        return x
+
+
+class FCBlock(nn.Module):
+    """A fully connected block with residual connection.
+
+    Takes input of shape (T, N, num_features) and returns
+    output of shape (T, N, num_features).
+
+    Args:
+        num_features (int): Number of features.
+    """
+
+    def __init__(self, num_features: int) -> None:
+        super().__init__()
+        self.fc = nn.Sequential(
+            nn.Linear(num_features, num_features),
+            nn.ReLU(),
+            nn.Linear(num_features, num_features),
+        )
+        self.layer_norm = nn.LayerNorm(num_features)
+
+    def forward(self, inputs: torch.Tensor) -> torch.Tensor:
+        x = self.fc(inputs)
+        x = x + inputs
+        x = self.layer_norm(x)
+        return x
+
+
+class MultiLayerCNNEncoder(nn.Module):
+    """A CNN encoder with 1D convolutions and FC blocks for EMG sequences.
+
+    Follows the pattern of TDSConvEncoder but uses 1D convolutions.
+    Takes input of shape (T, N, num_features) and returns
+    output of shape (T, N, num_features).
+
+    Args:
+        num_features (int): Input and output feature size.
+        num_layers (int): Number of CNN + FC block pairs. (default: 2)
+        kernel_size (int): Kernel size for convolutions. (default: 32)
+        dropout (float): Dropout probability. (default: 0.2)
+    """
+
+    def __init__(
+        self,
+        num_features: int,
+        num_layers: int = 2,
+        kernel_size: int = 32,
+        dropout: float = 0.2,
+    ) -> None:
+        super().__init__()
+        self.num_features = num_features
+
+        blocks: list[nn.Module] = []
+        for _ in range(num_layers):
+            blocks.extend(
+                [
+                    CNN1dBlock(num_features, kernel_size, dropout),
+                    FCBlock(num_features),
+                ]
+            )
+        
+        self.blocks = nn.Sequential(*blocks)
+
+    def forward(self, inputs: torch.Tensor) -> torch.Tensor:
+        return self.blocks(inputs)
+
+    @property
+    def output_size(self) -> int:
+        return self.num_features
+
+
+class CNNRNNEncoder(nn.Module):
+    """A hybrid CNN+RNN encoder combining convolutional and recurrent layers.
+
+    Uses CNN blocks for local feature extraction followed by GRU layers
+    for sequential modeling. Takes input of shape (T, N, num_features) 
+    and returns output of shape (T, N, hidden_size * 2).
+
+    Args:
+        num_features (int): Input feature size.
+        num_cnn_layers (int): Number of CNN + FC block pairs. (default: 2)
+        kernel_size (int): Kernel size for convolutions. (default: 15)
+        hidden_size (int): GRU hidden state size. (default: 384)
+        num_rnn_layers (int): Number of stacked GRU layers. (default: 2)
+        dropout (float): Dropout probability. (default: 0.1)
+    """
+
+    def __init__(
+        self,
+        num_features: int,
+        num_cnn_layers: int = 2,
+        kernel_size: int = 15,
+        hidden_size: int = 384,
+        num_rnn_layers: int = 2,
+        dropout: float = 0.1,
+    ) -> None:
+        super().__init__()
+        self.num_features = num_features
+        self.hidden_size = hidden_size
+
+        cnn_blocks: list[nn.Module] = []
+        for _ in range(num_cnn_layers):
+            cnn_blocks.extend(
+                [
+                    CNN1dBlock(num_features, kernel_size, dropout),
+                    FCBlock(num_features),
+                ]
+            )
+        self.cnn_layers = nn.Sequential(*cnn_blocks)
+
+        self.gru = nn.GRU(
+            input_size=num_features,
+            hidden_size=hidden_size,
+            num_layers=num_rnn_layers,
+            dropout=dropout if num_rnn_layers > 1 else 0.0,
+            bidirectional=True,
+            batch_first=False,
+        )
+        
+        output_size = hidden_size * 2
+        self.layer_norm = nn.LayerNorm(output_size)
+
+    def forward(self, inputs: torch.Tensor) -> torch.Tensor:
+        x = self.cnn_layers(inputs)
+        
+        with torch.backends.cudnn.flags(enabled=False):
+            x, _ = self.gru(x)
+        
+        return self.layer_norm(x)
+
+    @property
+    def output_size(self) -> int:
+        return self.hidden_size * 2
