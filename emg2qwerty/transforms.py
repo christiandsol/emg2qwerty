@@ -10,6 +10,7 @@ from typing import Any, TypeVar
 
 import numpy as np
 import torch
+import torch.nn.functional as F
 import torchaudio
 
 
@@ -187,6 +188,112 @@ class LogSpectrogram:
         spec = self.spectrogram(x)  # (..., C, freq, T)
         logspec = torch.log10(spec + 1e-6)  # (..., C, freq, T)
         return logspec.movedim(-1, 0)  # (T, ..., C, freq)
+
+
+@dataclass
+class GaussianNoise:
+    """Adds zero-mean Gaussian noise to the input tensor as a data
+    augmentation technique. Applied after ToTensor, before LogSpectrogram.
+
+    Args:
+        std (float): Standard deviation of the Gaussian noise relative to the
+            signal standard deviation (SNR-like scaling). (default: 0.05)
+    """
+
+    std: float = 0.05
+
+    def __call__(self, tensor: torch.Tensor) -> torch.Tensor:
+        noise = torch.randn_like(tensor) * self.std
+        return tensor + noise
+
+
+@dataclass
+class TimeWarp:
+    """Applies time-warping augmentation by randomly stretching/compressing
+    segments of the time axis. Applied after ToTensor, before LogSpectrogram.
+
+    Args:
+        max_warp (int): Maximum number of timesteps to warp by. (default: 50)
+    """
+
+    max_warp: int = 50
+
+    def __call__(self, tensor: torch.Tensor) -> torch.Tensor:
+        T = tensor.shape[0]
+        if T < self.max_warp * 4:
+            return tensor
+
+        center = T // 2
+        warp = np.random.randint(-self.max_warp, self.max_warp + 1)
+        source = center
+        dest = center + warp
+
+        left = tensor[:source]
+        right = tensor[source:]
+
+        remaining_dims = tensor.shape[1:]
+        left_flat = left.reshape(left.shape[0], -1).T.unsqueeze(0)
+        right_flat = right.reshape(right.shape[0], -1).T.unsqueeze(0)
+
+        left_resampled = F.interpolate(
+            left_flat.float(), size=dest, mode="linear", align_corners=False
+        )
+        right_resampled = F.interpolate(
+            right_flat.float(), size=T - dest, mode="linear", align_corners=False
+        )
+
+        left_out = left_resampled.squeeze(0).T.reshape(-1, *remaining_dims)
+        right_out = right_resampled.squeeze(0).T.reshape(-1, *remaining_dims)
+        return torch.cat([left_out, right_out], dim=0).to(tensor.dtype)
+
+
+@dataclass
+class ChannelSubset:
+    """Selects a subset of electrode channels, evenly spaced around the
+    16-channel ring. Used for channel ablation experiments.
+
+    For a 16-channel ring, selecting n channels picks evenly spaced indices.
+    Input shape: (..., C, ...) where C is the channel dimension.
+
+    Args:
+        n_channels (int): Number of channels to select. (default: 16)
+        total_channels (int): Total available channels. (default: 16)
+        channel_dim (int): Dimension of channels. (default: -1)
+    """
+
+    n_channels: int = 16
+    total_channels: int = 16
+    channel_dim: int = -1
+
+    def __post_init__(self) -> None:
+        assert 1 <= self.n_channels <= self.total_channels
+        self.indices = torch.linspace(
+            0, self.total_channels - 1, self.n_channels
+        ).long()
+
+    def __call__(self, tensor: torch.Tensor) -> torch.Tensor:
+        if self.n_channels == self.total_channels:
+            return tensor
+        return tensor.index_select(
+            self.channel_dim, self.indices.to(tensor.device)
+        )
+
+
+@dataclass
+class Downsample:
+    """Downsamples the temporal signal by an integer factor via decimation.
+    Input must be of shape (T, ...) where dim 0 is time.
+
+    Args:
+        factor (int): Downsampling factor. (default: 1)
+    """
+
+    factor: int = 1
+
+    def __call__(self, tensor: torch.Tensor) -> torch.Tensor:
+        if self.factor <= 1:
+            return tensor
+        return tensor[:: self.factor]
 
 
 @dataclass

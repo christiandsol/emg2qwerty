@@ -1,0 +1,70 @@
+{
+  "no_augmentation": {
+    "val_val/CER": 18.60877227783203,
+    "test_test/CER": 22.36870574951172,
+    "test_test/DER": 1.42641019821167,
+    "test_test/IER": 7.67235803604126,
+    "test_test/SER": 13.269937515258789,
+    "test_test/loss": 1.095306396484375
+  },
+  "specaug_only": {
+    "val_val/loss": 0.9909837245941162,
+    "val_val/CER": 20.225963592529297,
+    "val_val/IER": 6.003544330596924,
+    "val_val/DER": 1.4178112745285034,
+    "val_val/SER": 12.804608345031738,
+    "test_test/loss": 1.1273698806762695,
+    "test_test/CER": 23.406095504760742,
+    "test_test/IER": 6.397233486175537,
+    "test_test/DER": 1.8154311180114746,
+    "test_test/SER": 15.193429946899414
+  },
+  "default_all": {
+    "val_val/loss": 0.8775333166122437,
+    "val_val/CER": 20.004430770874023,
+    "val_val/IER": 5.139565944671631,
+    "val_val/DER": 1.4842711687088013,
+    "val_val/SER": 13.380593299865723,
+    "test_test/loss": 0.9000732898712158,
+    "test_test/CER": 21.59066390991211,
+    "test_test/IER": 3.6956992149353027,
+    "test_test/DER": 2.1180031299591064,
+    "test_test/SER": 15.776961326599121
+  },
+  "gaussian_noise": {
+    "val_val/loss": 0.8351744413375854,
+    "val_val/CER": 19.47275161743164,
+    "val_val/IER": 4.519273281097412,
+    "val_val/DER": 1.7501107454299927,
+    "val_val/SER": 13.203367233276367,
+    "test_test/loss": 0.896476686000824,
+    "test_test/CER": 21.612276077270508,
+    "test_test/IER": 3.760535955429077,
+    "test_test/DER": 1.9234925508499146,
+    "test_test/SER": 15.928247451782227
+  },
+  "time_warp": {
+    "val_val/loss": 0.9048805832862854,
+    "val_val/CER": 20.957021713256836,
+    "val_val/IER": 4.408506870269775,
+    "val_val/DER": 2.1488702297210693,
+    "val_val/SER": 14.399645805358887,
+    "test_test/loss": 0.8600844144821167,
+    "test_test/CER": 21.677112579345703,
+    "test_test/IER": 3.2418413162231445,
+    "test_test/DER": 2.7447590827941895,
+    "test_test/SER": 15.690512657165527
+  },
+  "kitchen_sink": {
+    "val_val/loss": 0.84688401222229,
+    "val_val/CER": 23.349578857421875,
+    "val_val/IER": 4.8515729904174805,
+    "val_val/DER": 2.237483501434326,
+    "val_val/SER": 16.260522842407227,
+    "test_test/loss": 0.8232854008674622,
+    "test_test/CER": 23.88156509399414,
+    "test_test/IER": 2.723146677017212,
+    "test_test/DER": 3.263453722000122,
+    "test_test/SER": 17.89496421813965
+  }
+}

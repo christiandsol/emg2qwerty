@@ -1,0 +1,62 @@
+{
+  "0.125": {
+    "n_sessions": 2,
+    "metrics": {
+      "val_val/loss": 1.9831221103668213,
+      "val_val/CER": 44.173683166503906,
+      "val_val/IER": 22.131147384643555,
+      "val_val/DER": 0.9747452139854431,
+      "val_val/SER": 21.06778907775879,
+      "test_test/loss": 1.4541804790496826,
+      "test_test/CER": 36.6976432800293,
+      "test_test/IER": 16.14436912536621,
+      "test_test/DER": 1.31834876537323,
+      "test_test/SER": 19.234926223754883
+    }
+  },
+  "0.25": {
+    "n_sessions": 4,
+    "metrics": {
+      "val_val/loss": 1.3963426351547241,
+      "val_val/CER": 28.201152801513672,
+      "val_val/IER": 9.924678802490234,
+      "val_val/DER": 2.3925564289093018,
+      "val_val/SER": 15.883916854858398,
+      "test_test/loss": 1.3878403902053833,
+      "test_test/CER": 32.137454986572266,
+      "test_test/IER": 13.24832534790039,
+      "test_test/DER": 1.42641019821167,
+      "test_test/SER": 17.462718963623047
+    }
+  },
+  "0.5": {
+    "n_sessions": 8,
+    "metrics": {
+      "val_val/loss": 1.2692272663116455,
+      "val_val/CER": 23.903411865234375,
+      "val_val/IER": 6.313690662384033,
+      "val_val/DER": 2.237483501434326,
+      "val_val/SER": 15.352237701416016,
+      "test_test/loss": 1.143195390701294,
+      "test_test/CER": 24.78927993774414,
+      "test_test/IER": 7.715582370758057,
+      "test_test/DER": 1.6857575178146362,
+      "test_test/SER": 15.387940406799316
+    }
+  },
+  "1.0": {
+    "n_sessions": 16,
+    "metrics": {
+      "val_val/loss": 0.9373534321784973,
+      "val_val/CER": 18.409393310546875,
+      "val_val/IER": 5.626938343048096,
+      "val_val/DER": 1.5064244270324707,
+      "val_val/SER": 11.276030540466309,
+      "test_test/loss": 1.080501914024353,
+      "test_test/CER": 22.455154418945312,
+      "test_test/IER": 6.980764865875244,
+      "test_test/DER": 1.31834876537323,
+      "test_test/SER": 14.15604019165039
+    }
+  }
+}

@@ -108,7 +108,7 @@ class WindowedEMGDataModule(pl.LightningDataModule):
             num_workers=self.num_workers,
             collate_fn=WindowedEMGDataset.collate,
             pin_memory=True,
-            persistent_workers=True,
+            persistent_workers=self.num_workers > 0,
         )
 
     def val_dataloader(self) -> DataLoader:
@@ -119,22 +119,23 @@ class WindowedEMGDataModule(pl.LightningDataModule):
             num_workers=self.num_workers,
             collate_fn=WindowedEMGDataset.collate,
             pin_memory=True,
-            persistent_workers=True,
+            persistent_workers=self.num_workers > 0,
         )
 
     def test_dataloader(self) -> DataLoader:
         # Test dataset does not involve windowing and entire sessions are
         # fed at once. Limit batch size to 1 to fit within GPU memory and
         # avoid any influence of padding (while collating multiple batch items)
-        # in test scores.
+        # in test scores. pin_memory=False to avoid CUDA context issues
+        # when reusing the datamodule across trainer instances.
         return DataLoader(
             self.test_dataset,
             batch_size=1,
             shuffle=False,
-            num_workers=self.num_workers,
+            num_workers=0,
             collate_fn=WindowedEMGDataset.collate,
-            pin_memory=True,
-            persistent_workers=True,
+            pin_memory=False,
+            persistent_workers=False,
         )
 
 

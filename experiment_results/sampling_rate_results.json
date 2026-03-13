@@ -1,0 +1,78 @@
+{
+  "2000": {
+    "downsample_factor": 1,
+    "n_fft": 64,
+    "hop_length": 16,
+    "freq_bins": 33,
+    "in_features": 528,
+    "metrics": {
+      "val_val/loss": 0.9373534321784973,
+      "val_val/CER": 18.409393310546875,
+      "val_val/IER": 5.626938343048096,
+      "val_val/DER": 1.5064244270324707,
+      "val_val/SER": 11.276030540466309,
+      "test_test/loss": 1.080501914024353,
+      "test_test/CER": 22.455154418945312,
+      "test_test/IER": 6.980764865875244,
+      "test_test/DER": 1.31834876537323,
+      "test_test/SER": 14.15604019165039
+    }
+  },
+  "1000": {
+    "downsample_factor": 2,
+    "n_fft": 32,
+    "hop_length": 8,
+    "freq_bins": 17,
+    "in_features": 272,
+    "metrics": {
+      "val_val/loss": 0.9135375618934631,
+      "val_val/CER": 17.434648513793945,
+      "val_val/IER": 4.940186023712158,
+      "val_val/DER": 1.4842711687088013,
+      "val_val/SER": 11.010190963745117,
+      "test_test/loss": 1.063247799873352,
+      "test_test/CER": 21.158418655395508,
+      "test_test/IER": 6.0514373779296875,
+      "test_test/DER": 1.42641019821167,
+      "test_test/SER": 13.680570602416992
+    }
+  },
+  "500": {
+    "downsample_factor": 4,
+    "n_fft": 16,
+    "hop_length": 4,
+    "freq_bins": 9,
+    "in_features": 144,
+    "metrics": {
+      "val_val/loss": 0.9398890733718872,
+      "val_val/CER": 18.830305099487305,
+      "val_val/IER": 5.139565944671631,
+      "val_val/DER": 1.5950376987457275,
+      "val_val/SER": 12.095702171325684,
+      "test_test/loss": 1.083598017692566,
+      "test_test/CER": 23.12513542175293,
+      "test_test/IER": 6.786254405975342,
+      "test_test/DER": 1.4912470579147339,
+      "test_test/SER": 14.847633361816406
+    }
+  },
+  "250": {
+    "downsample_factor": 8,
+    "n_fft": 8,
+    "hop_length": 2,
+    "freq_bins": 5,
+    "in_features": 80,
+    "metrics": {
+      "val_val/loss": 0.951463520526886,
+      "val_val/CER": 21.31147575378418,
+      "val_val/IER": 5.117412567138672,
+      "val_val/DER": 1.7722641229629517,
+      "val_val/SER": 14.421798706054688,
+      "test_test/loss": 1.0520305633544922,
+      "test_test/CER": 24.98379135131836,
+      "test_test/IER": 6.181110858917236,
+      "test_test/DER": 1.7505943775177002,
+      "test_test/SER": 17.052085876464844
+    }
+  }
+}
