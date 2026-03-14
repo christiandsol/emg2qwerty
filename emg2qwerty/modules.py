@@ -328,3 +328,51 @@ class GRUEncoder(nn.Module):
     @property
     def output_size(self) -> int:
         return self.hidden_size * 2 if self.bidirectional else self.hidden_size
+
+
+class LSTMEncoder(nn.Module):
+    """A bidirectional LSTM encoder for EMG sequences.
+
+    Takes input of shape (T, N, num_features) and returns
+    output of shape (T, N, hidden_size * 2) if bidirectional.
+
+    Args:
+        num_features (int): Input feature size.
+        hidden_size (int): LSTM hidden state size. (default: 384)
+        num_layers (int): Number of stacked LSTM layers. (default: 2)
+        dropout (float): Dropout between LSTM layers. (default: 0.2)
+        bidirectional (bool): Use bidirectional LSTM. (default: True)
+    """
+
+    def __init__(
+        self,
+        num_features: int,
+        hidden_size: int = 384,
+        num_layers: int = 2,
+        dropout: float = 0.2,
+        bidirectional: bool = True,
+    ) -> None:
+        super().__init__()
+        self.hidden_size = hidden_size
+        self.bidirectional = bidirectional
+
+        self.lstm = nn.LSTM(
+            input_size=num_features,
+            hidden_size=hidden_size,
+            num_layers=num_layers,
+            dropout=dropout if num_layers > 1 else 0.0,
+            bidirectional=bidirectional,
+            batch_first=False,
+        )
+        out_size = hidden_size * 2 if bidirectional else hidden_size
+        self.layer_norm = nn.LayerNorm(out_size)
+
+    def forward(self, inputs: torch.Tensor) -> torch.Tensor:
+        x = inputs.contiguous()
+        with torch.backends.cudnn.flags(enabled=False):
+            x, _ = self.lstm(x)
+        return self.layer_norm(x)
+
+    @property
+    def output_size(self) -> int:
+        return self.hidden_size * 2 if self.bidirectional else self.hidden_size
